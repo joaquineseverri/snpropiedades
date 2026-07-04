@@ -92,7 +92,11 @@ export default function MapClient({ propiedades, onSelectProp }: Props) {
         )
 
       marker.on('click', () => {
-        onSelectProp?.(p)
+        if (onSelectProp) {
+          onSelectProp(p)
+        } else {
+          window.location.href = `/propiedades/${p.slug ?? p.id}`
+        }
       })
 
       markersRef.current[p.id] = marker

@@ -107,15 +107,7 @@ export default async function HomePage() {
 
         {/* Mapa */}
         <div className="flex-1 relative">
-          <MapClient
-            propiedades={propiedades}
-            onSelectProp={(p) => {
-              // El link a la propiedad se maneja desde el marker click en MapClient
-              if (p.slug || p.id) {
-                window.location.href = `/propiedades/${p.slug ?? p.id}`
-              }
-            }}
-          />
+          <MapClient propiedades={propiedades} />
         </div>
       </div>
     </div>
