@@ -3,37 +3,32 @@
 import { useState, useMemo } from 'react'
 import type { Propiedad } from '@/lib/types'
 
-const TIPOS = ['Todos', 'Casa', 'Dpto', 'Lote']
-
-const BADGE: Record<string, string> = {
-  Casa: 'bg-green-100 text-green-800',
-  Dpto: 'bg-blue-100 text-blue-800',
-  Lote: 'bg-orange-100 text-orange-800',
-  Otro: 'bg-purple-100 text-purple-800',
+/* ── Paleta exacta del prototipo ──────────────────────────────────────────── */
+const TIPO_STYLE: Record<string, { bg: string; color: string; activeBg: string; label: string }> = {
+  Casa: { bg: '#e8f5e9', color: '#2e7d32', activeBg: '#2e7d32', label: 'Casa'  },
+  Dpto: { bg: '#e3f2fd', color: '#1565c0', activeBg: '#1565c0', label: 'Dpto'  },
+  Lote: { bg: '#fff3e0', color: '#e65100', activeBg: '#e65100', label: 'Lote'  },
+  Otro: { bg: '#f3e5f5', color: '#6a1b9a', activeBg: '#6a1b9a', label: 'Otro'  },
 }
-const TIPO_ICON: Record<string, string> = {
-  Casa: '🏠', Dpto: '🏢', Lote: '🌿', Otro: '🏗',
-}
-const BG_COLOR: Record<string, string> = {
-  Casa: '#e8f5e9', Dpto: '#e3f2fd', Lote: '#fff3e0', Otro: '#f3e5f5',
-}
+const TIPOS = ['Todos', 'Casa', 'Dpto', 'Lote', 'Otro']
 
 function fmtPrecio(p: number | null) {
-  if (!p) return 'Consultar'
-  return `USD ${p.toLocaleString('es-AR')}`
+  if (!p) return { main: 'A consultar', tag: '' }
+  return { main: `USD ${p.toLocaleString('es-AR')}`, tag: '' }
 }
 
-interface Props {
-  propiedades: Propiedad[]
+function parseTags(caract: string | null): string[] {
+  if (!caract) return []
+  return caract.split(/[|·,;\/]+/).map(t => t.trim()).filter(t => t.length > 1).slice(0, 4)
 }
 
 const POR_PAG = 24
 
-export default function PropertyGrid({ propiedades }: Props) {
-  const [tipo,     setTipo]     = useState('Todos')
-  const [precioMax, setPrecioMax] = useState('')
-  const [busqueda, setBusqueda]  = useState('')
-  const [pagina,   setPagina]    = useState(1)
+export default function PropertyGrid({ propiedades }: { propiedades: Propiedad[] }) {
+  const [tipo,      setTipo]     = useState('Todos')
+  const [precioMax, setPrecioMax]= useState('')
+  const [busqueda,  setBusqueda] = useState('')
+  const [pagina,    setPagina]   = useState(1)
 
   const filtered = useMemo(() => {
     const max = parseInt(precioMax.replace(/\D/g, ''))
@@ -54,124 +49,204 @@ export default function PropertyGrid({ propiedades }: Props) {
   function reset() { setTipo('Todos'); setPrecioMax(''); setBusqueda(''); setPagina(1) }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 80px' }}>
 
       {/* ── Filtros ── */}
-      <div className="bg-white rounded-2xl shadow-sm p-4 mb-6 flex flex-col gap-3">
-
+      <div style={{
+        background: '#fff', borderBottom: '1px solid #e5e5e5',
+        padding: '10px 0', marginBottom: 20,
+        position: 'sticky', top: 50, zIndex: 40,
+      }}>
+        {/* Search */}
         <input
           type="text"
-          placeholder="🔍  Buscar por dirección, zona..."
+          placeholder="🔍  Buscar por dirección, zona o descripción…"
           value={busqueda}
           onChange={e => { setBusqueda(e.target.value); setPagina(1) }}
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+          style={{
+            width: '100%', border: '1px solid #ddd', borderRadius: 8,
+            padding: '8px 14px', fontSize: 13, marginBottom: 10,
+            outline: 'none', background: '#fafafa',
+          }}
         />
 
-        <div className="flex flex-wrap items-center gap-2">
-          {TIPOS.map(t => (
-            <button
-              key={t}
-              onClick={() => { setTipo(t); setPagina(1) }}
-              className={`text-[12px] font-bold px-3 py-1.5 rounded-full transition-colors ${
-                tipo === t
-                  ? 'bg-[#1a1a2e] text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+        {/* Pills + precio */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          {TIPOS.map(t => {
+            const s = TIPO_STYLE[t]
+            const active = tipo === t
+            return (
+              <button
+                key={t}
+                onClick={() => { setTipo(t); setPagina(1) }}
+                style={{
+                  fontSize: 12, padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
+                  fontWeight: 600, border: '1.5px solid transparent', transition: 'all .15s',
+                  background: active ? (s?.activeBg ?? '#1a1a2e') : (s?.bg ?? '#f0f2f5'),
+                  color:      active ? '#fff' : (s?.color ?? '#333'),
+                  borderColor: active ? (s?.activeBg ?? '#1a1a2e') : 'transparent',
+                }}
+              >
+                {t}
+              </button>
+            )
+          })}
+
           <input
             type="text"
             placeholder="Precio máx USD"
             value={precioMax}
             onChange={e => { setPrecioMax(e.target.value); setPagina(1) }}
-            className="ml-auto border border-gray-200 rounded-xl px-3 py-1.5 text-[12px] w-36 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            style={{
+              marginLeft: 'auto', border: '1px solid #ddd', borderRadius: 8,
+              padding: '5px 12px', fontSize: 12, width: 140,
+              outline: 'none', background: '#fafafa',
+            }}
           />
         </div>
 
-        <div className="flex items-center justify-between text-[11px] text-gray-400">
-          <span>{filtered.length.toLocaleString('es-AR')} propiedades encontradas</span>
+        {/* Count */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+          <span style={{ fontSize: 12, color: '#888' }}>
+            {filtered.length.toLocaleString('es-AR')} propiedades
+          </span>
           {(tipo !== 'Todos' || precioMax || busqueda) && (
-            <button onClick={reset} className="text-[#4a7fcb] font-bold">Limpiar filtros</button>
+            <button onClick={reset}
+              style={{ fontSize: 12, color: '#4a7fcb', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer' }}>
+              Limpiar filtros
+            </button>
           )}
         </div>
       </div>
 
       {/* ── Grid ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {paged.map(p => (
-          <a
-            key={p.id}
-            href={`/propiedades/${p.slug ?? p.id}`}
-            className="no-underline block group"
-          >
-            <div className="bg-white rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md transition-shadow h-full flex flex-col">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: 12,
+      }}>
+        {paged.map(p => {
+          const s = TIPO_STYLE[p.tipo] ?? TIPO_STYLE.Otro
+          const { main } = fmtPrecio(p.precio_usd)
+          const tags = parseTags(p.caracteristicas)
+          const addr = p.direccion.split(',')[0]
 
-              {/* Imagen placeholder */}
+          return (
+            <a
+              key={p.id}
+              href={`/propiedades/${p.slug ?? p.id}`}
+              style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+            >
               <div
-                className="h-[140px] flex items-center justify-center relative flex-shrink-0"
-                style={{ background: BG_COLOR[p.tipo] ?? '#f5f5f5' }}
+                className="prop-card"
+                style={{
+                  background: '#fff', borderRadius: 10, overflow: 'hidden',
+                  border: '2px solid transparent', cursor: 'pointer',
+                  boxShadow: '0 1px 4px rgba(0,0,0,.06)',
+                  transition: 'box-shadow .15s, transform .1s, border-color .15s',
+                  height: '100%', display: 'flex', flexDirection: 'column',
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLElement
+                  el.style.boxShadow = '0 4px 16px rgba(0,0,0,.12)'
+                  el.style.transform = 'translateY(-1px)'
+                  el.style.borderColor = '#4a7fcb'
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLElement
+                  el.style.boxShadow = '0 1px 4px rgba(0,0,0,.06)'
+                  el.style.transform = 'translateY(0)'
+                  el.style.borderColor = 'transparent'
+                }}
               >
-                <span className="text-5xl opacity-30">{TIPO_ICON[p.tipo] ?? '🏗'}</span>
-                <span className={`absolute top-3 left-3 text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full ${BADGE[p.tipo] ?? BADGE.Otro}`}>
-                  {p.tipo}
-                </span>
-                {p.inmobiliaria && (
-                  <span className="absolute bottom-3 right-3 text-[9px] text-gray-500 bg-white/90 px-2 py-0.5 rounded-full max-w-[120px] truncate">
-                    {p.inmobiliaria}
+                {/* Head */}
+                <div style={{ padding: '11px 13px 8px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4,
+                    textTransform: 'uppercase', letterSpacing: '.4px', flexShrink: 0,
+                    background: s.bg, color: s.color,
+                  }}>
+                    {p.tipo}
                   </span>
-                )}
-                {p.tiene_coords && (
-                  <span className="absolute bottom-3 left-3 text-[9px] text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full">
-                    📍 Ubicado
-                  </span>
-                )}
-              </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, flex: 1, lineHeight: 1.3 }}>
+                    {addr}
+                  </div>
+                </div>
 
-              {/* Contenido */}
-              <div className="p-4 flex flex-col flex-1">
-                <div className="font-bold text-[14px] text-[#1a1a2e] truncate mb-0.5">
-                  {p.direccion.split(',')[0]}
+                {/* Price */}
+                <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e', padding: '0 13px 4px' }}>
+                  {main}
                 </div>
-                {p.zona && (
-                  <div className="text-[11px] text-gray-400 mb-2">{p.zona}</div>
-                )}
-                <div className="font-black text-[20px] text-[#1a1a2e] mb-2">
-                  {fmtPrecio(p.precio_usd)}
-                </div>
-                {p.caracteristicas && (
-                  <div className="text-[11px] text-gray-400 truncate mb-3">
-                    {p.caracteristicas}
+
+                {/* Description */}
+                {p.descripcion && (
+                  <div style={{
+                    padding: '0 13px 8px', fontSize: 12, color: '#666', lineHeight: 1.45,
+                    display: '-webkit-box', WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                  }}>
+                    {p.descripcion}
                   </div>
                 )}
-                <div className="mt-auto pt-2 border-t border-gray-50">
-                  <span className="text-[11px] font-bold text-[#4a7fcb]">
-                    Ver propiedad →
+
+                {/* Tags */}
+                {tags.length > 0 && (
+                  <div style={{ padding: '0 13px 8px', display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                    {tags.map((t, i) => (
+                      <span key={i} style={{
+                        fontSize: 10, background: '#f0f2f5', color: '#555',
+                        padding: '2px 8px', borderRadius: 10,
+                      }}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Footer */}
+                <div style={{
+                  padding: '7px 13px 10px', display: 'flex', alignItems: 'center',
+                  justifyContent: 'space-between', borderTop: '1px solid #f3f3f3',
+                  marginTop: 'auto', gap: 8,
+                }}>
+                  <span style={{ fontSize: 10, color: '#aaa', flex: 1 }}>
+                    {p.inmobiliaria ?? ''}
+                  </span>
+                  <span style={{
+                    fontSize: 11, fontWeight: 700, color: '#4a7fcb',
+                    padding: '4px 11px', border: '1.5px solid #4a7fcb', borderRadius: 20,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    Ver más →
                   </span>
                 </div>
               </div>
-            </div>
-          </a>
-        ))}
+            </a>
+          )
+        })}
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-20 text-gray-400">
-          <div className="text-4xl mb-3">🔍</div>
-          <div className="font-semibold">Sin resultados para esa búsqueda</div>
-          <button onClick={reset} className="mt-3 text-[#4a7fcb] font-bold text-sm">Limpiar filtros</button>
+        <div style={{ textAlign: 'center', padding: '60px 24px', color: '#aaa' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Sin resultados</div>
+          <button onClick={reset}
+            style={{ color: '#4a7fcb', fontWeight: 700, fontSize: 13, background: 'none', border: 'none', cursor: 'pointer' }}>
+            Limpiar filtros
+          </button>
         </div>
       )}
 
-      {/* Load more */}
       {hasMore && (
-        <div className="text-center mt-10">
+        <div style={{ textAlign: 'center', marginTop: 32 }}>
           <button
             onClick={() => setPagina(p => p + 1)}
-            className="bg-[#1a1a2e] text-white font-bold text-[13px] px-8 py-3 rounded-full hover:bg-[#2a2a4e] transition-colors"
+            style={{
+              background: '#1a1a2e', color: '#fff', fontWeight: 700, fontSize: 13,
+              padding: '12px 32px', borderRadius: 30, border: 'none', cursor: 'pointer',
+            }}
           >
-            Ver más ({filtered.length - pagina * POR_PAG} restantes)
+            Ver más propiedades ({filtered.length - pagina * POR_PAG} restantes)
           </button>
         </div>
       )}
