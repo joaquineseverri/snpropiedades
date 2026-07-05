@@ -131,7 +131,7 @@ export default function MapClient({ propiedades, onSelectProp }: Props) {
     })
 
     // Leyenda (igual al prototipo)
-    const legend = L.control({ position: 'bottomright' })
+    const legend = (L as any).control({ position: 'bottomright' })
     legend.onAdd = () => {
       const div = L.DomUtil.create('div')
       div.innerHTML = `
