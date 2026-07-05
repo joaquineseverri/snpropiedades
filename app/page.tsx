@@ -1,20 +1,6 @@
-import dynamic from 'next/dynamic'
 import { getPropiedades } from '@/lib/supabase'
+import MapClientDynamic from '@/components/MapClientDynamic'
 import type { Propiedad } from '@/lib/types'
-
-// Leaflet no puede correr en el servidor — importación dinámica
-const MapClient = dynamic(() => import('@/components/MapClient'), {
-  ssr: false,
-  loading: () => (
-    <div style={{
-      width: '100%', height: '100%',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#1a1a2e', color: '#7eb8f7', fontSize: 14,
-    }}>
-      Cargando mapa…
-    </div>
-  ),
-})
 
 function fmtPrecio(p: number | null) {
   if (!p) return 'Consultar'
@@ -107,7 +93,7 @@ export default async function HomePage() {
 
         {/* Mapa */}
         <div className="flex-1 relative">
-          <MapClient propiedades={propiedades} />
+          <MapClientDynamic propiedades={propiedades} />
         </div>
       </div>
     </div>
