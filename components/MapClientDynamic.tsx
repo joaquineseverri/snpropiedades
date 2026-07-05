@@ -1,11 +1,5 @@
 'use client'
 
-/**
- * Wrapper cliente para MapClient con ssr:false.
- * Next.js 16 no permite dynamic() con ssr:false en Server Components,
- * así que lo movemos a este Client Component intermedio.
- */
-
 import dynamic from 'next/dynamic'
 import type { Propiedad } from '@/lib/types'
 
@@ -16,6 +10,7 @@ const MapClient = dynamic(() => import('./MapClient'), {
       width: '100%', height: '100%', minHeight: '200px',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: '#1a1a2e', color: '#7eb8f7', fontSize: 14,
+      fontFamily: "'Segoe UI',system-ui,sans-serif",
     }}>
       Cargando mapa…
     </div>
@@ -24,9 +19,13 @@ const MapClient = dynamic(() => import('./MapClient'), {
 
 interface Props {
   propiedades: Propiedad[]
+  showEscuelas?: boolean
+  showHospitales?: boolean
   onSelectProp?: (prop: Propiedad) => void
+  onHoverProp?:  (prop: Propiedad) => void
+  onUnhoverProp?: () => void
 }
 
-export default function MapClientDynamic({ propiedades, onSelectProp }: Props) {
-  return <MapClient propiedades={propiedades} onSelectProp={onSelectProp} />
+export default function MapClientDynamic(props: Props) {
+  return <MapClient {...props} />
 }
