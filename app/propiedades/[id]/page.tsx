@@ -1,10 +1,8 @@
-import dynamic from 'next/dynamic'
 import { notFound } from 'next/navigation'
 import { getPropiedadBySlug, getPropiedad } from '@/lib/supabase'
 import Analytics from '@/components/Analytics'
+import MapClientDynamic from '@/components/MapClientDynamic'
 import type { Propiedad } from '@/lib/types'
-
-const MapClient = dynamic(() => import('@/components/MapClient'), { ssr: false })
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function fmtPrecio(p: number | null) {
@@ -150,7 +148,7 @@ export default async function PropiedadPage({ params }: { params: { id: string }
             <div className="bg-white px-4 py-4 mt-2">
               <SectionTitle>Ubicación</SectionTitle>
               <div className="h-[200px] rounded-xl overflow-hidden mb-3">
-                <MapClient propiedades={[prop]} />
+                <MapClientDynamic propiedades={[prop]} />
               </div>
               <div className="flex gap-2">
                 <a
