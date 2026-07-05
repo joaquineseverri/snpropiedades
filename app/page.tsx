@@ -1,101 +1,93 @@
 import { getPropiedades } from '@/lib/supabase'
-import MapClientDynamic from '@/components/MapClientDynamic'
-import type { Propiedad } from '@/lib/types'
+import PropertyGrid from '@/components/PropertyGrid'
 
-function fmtPrecio(p: number | null) {
-  if (!p) return 'Consultar'
-  return `USD ${p.toLocaleString('es-AR')}`
-}
-
-const BADGE_COLOR: Record<string, string> = {
-  Casa : 'bg-green-100 text-green-800',
-  Dpto : 'bg-blue-100  text-blue-800',
-  Lote : 'bg-orange-100 text-orange-800',
-  Otro : 'bg-purple-100 text-purple-800',
-}
-
-export const revalidate = 300   // revalidar cada 5 minutos (ISR)
+export const revalidate = 300
 
 export default async function HomePage() {
-  const propiedades: Propiedad[] = await getPropiedades({
+  const propiedades = await getPropiedades({
     tipos: ['Casa', 'Dpto', 'Lote', 'Otro'],
-    soloConCoords: true,
+    soloConCoords: false,
   })
 
-  return (
-    <div className="flex flex-col h-screen bg-gray-50">
+  const casas  = propiedades.filter(p => p.tipo === 'Casa').length
+  const dptos  = propiedades.filter(p => p.tipo === 'Dpto').length
+  const lotes  = propiedades.filter(p => p.tipo === 'Lote').length
+  const inmobs = new Set(propiedades.map(p => p.inmobiliaria).filter(Boolean)).size
 
-      {/* ── HEADER ── */}
-      <header className="flex items-center justify-between px-4 h-[50px] bg-[#1a1a2e] text-white shadow-lg flex-shrink-0">
-        <span className="font-bold text-[15px] tracking-tight">
-          SN <span className="text-[#7eb8f7]">Propiedades</span>
-        </span>
-        <span className="text-xs text-white/60">{propiedades.length} propiedades</span>
+  return (
+    <div className="min-h-screen bg-[#f5f5f0]">
+
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-50 bg-[#1a1a2e] shadow-lg">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+          <span className="font-black text-white text-lg tracking-tight">
+            SN <span className="text-[#7eb8f7]">Propiedades</span>
+          </span>
+          <a
+            href="/mapa"
+            className="flex items-center gap-1.5 bg-[#4a7fcb] hover:bg-[#3a6fbb] text-white text-[12px] font-bold px-4 py-2 rounded-full no-underline transition-colors"
+          >
+            🗺 Ver mapa
+          </a>
+        </div>
       </header>
 
-      {/* ── BODY: sidebar + mapa ── */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* ── Hero ── */}
+      <div className="bg-gradient-to-b from-[#1a1a2e] via-[#1e2a4a] to-[#f5f5f0] pt-10 pb-16 px-4">
+        <div className="max-w-2xl mx-auto text-center">
+          <p className="text-[#7eb8f7] text-[12px] font-bold uppercase tracking-widest mb-3">
+            Portal inmobiliario local
+          </p>
+          <h1 className="text-[32px] md:text-[42px] font-black text-white leading-tight mb-4">
+            Encontrá tu propiedad<br />
+            <span className="text-[#7eb8f7]">en San Nicolás</span>
+          </h1>
+          <p className="text-white/50 text-sm mb-8">
+            Las mejores ofertas del centro, actualizadas diariamente
+          </p>
 
-        {/* Sidebar */}
-        <aside className="w-[340px] flex flex-col overflow-y-auto bg-white border-r border-gray-100 flex-shrink-0">
-
-          {/* Filtros (placeholder — se pueden hacer interactivos con useState en Client Component) */}
-          <div className="px-3 py-2 border-b border-gray-100 text-xs text-gray-400">
-            Mostrando {propiedades.length} propiedades en el Centro
+          {/* Stats */}
+          <div className="flex justify-center flex-wrap gap-x-8 gap-y-4">
+            <StatBadge val={propiedades.length} lbl="propiedades" />
+            <StatBadge val={casas}  lbl="casas" />
+            <StatBadge val={dptos}  lbl="departamentos" />
+            <StatBadge val={lotes}  lbl="lotes" />
+            <StatBadge val={inmobs} lbl="inmobiliarias" />
           </div>
-
-          {/* Cards */}
-          {propiedades.map(p => (
-            <a
-              key={p.id}
-              href={`/propiedades/${p.slug ?? p.id}`}
-              className="block border-b border-gray-50 hover:bg-gray-50 transition-colors p-3 no-underline"
-            >
-              {/* Head */}
-              <div className="flex items-center gap-2 mb-1">
-                <span className={`text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${BADGE_COLOR[p.tipo] ?? BADGE_COLOR.Otro}`}>
-                  {p.tipo}
-                </span>
-                <span className="text-[10px] text-gray-400 ml-auto">{p.inmobiliaria ?? ''}</span>
-              </div>
-
-              {/* Dirección */}
-              <div className="text-[13px] font-semibold text-gray-800 leading-snug truncate">
-                {p.direccion.split(',')[0]}
-              </div>
-
-              {/* Precio */}
-              <div className="text-[12px] font-bold text-[#1a1a2e] mt-0.5">
-                {fmtPrecio(p.precio_usd)}
-              </div>
-
-              {/* Características */}
-              {p.caracteristicas && (
-                <div className="text-[10px] text-gray-400 mt-1 truncate">{p.caracteristicas}</div>
-              )}
-
-              {/* Descripción snippet */}
-              {p.descripcion && (
-                <div className="text-[11px] text-gray-500 mt-1 line-clamp-2 leading-snug">
-                  {p.descripcion}
-                </div>
-              )}
-
-              {/* CTA */}
-              <div className="mt-2">
-                <span className="text-[10px] font-bold text-[#4a7fcb] border border-[#4a7fcb] px-2 py-0.5 rounded-full">
-                  Ver más →
-                </span>
-              </div>
-            </a>
-          ))}
-        </aside>
-
-        {/* Mapa */}
-        <div className="flex-1 relative">
-          <MapClientDynamic propiedades={propiedades} />
         </div>
       </div>
+
+      {/* ── Grid con filtros ── */}
+      <PropertyGrid propiedades={propiedades} />
+
+      {/* ── Footer ── */}
+      <footer className="border-t border-gray-200 py-8 px-4 text-center bg-white">
+        <div className="text-[13px] font-black text-[#1a1a2e] mb-1">
+          SN <span className="text-[#4a7fcb]">Propiedades</span>
+        </div>
+        <div className="text-[11px] text-gray-400">
+          San Nicolás de los Arroyos · Buenos Aires · Argentina
+        </div>
+      </footer>
+
+      {/* ── Botón flotante mapa ── */}
+      <a
+        href="/mapa"
+        className="fixed bottom-6 right-4 z-40 flex items-center gap-2 bg-[#1a1a2e] text-white font-bold text-[13px] px-4 py-3 rounded-full shadow-xl no-underline hover:bg-[#2a2a4e] transition-colors"
+      >
+        🗺 <span>Ver en el mapa</span>
+      </a>
+    </div>
+  )
+}
+
+function StatBadge({ val, lbl }: { val: number; lbl: string }) {
+  return (
+    <div className="text-center">
+      <div className="text-[26px] font-black text-white leading-none">
+        {val.toLocaleString('es-AR')}
+      </div>
+      <div className="text-[11px] text-white/40 uppercase tracking-wide mt-0.5">{lbl}</div>
     </div>
   )
 }
